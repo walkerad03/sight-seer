@@ -10,22 +10,17 @@ BIN_SIZE = 5  # Degrees
 TRAIN_TEST_RATIO = 0.85
 
 
-def calculate_bin(latitude, longitude, granularity):
+def _calculate_bin(latitude, longitude, granularity):
+    """
+    Compute a class for a given latitude and longitude.
+
+    Bins are grid squares spread across any point on the globe. `granularity`
+    defines the width of the squares in degrees.
+    """
     lat_bin = int((latitude + 90) / granularity)
     lon_bin = int((longitude + 180) / granularity)
     num_lon_bins = int(360 / granularity)
     return lat_bin * num_lon_bins + lon_bin
-
-
-def calculate_lat_lon_from_bin(bin_index, granularity):
-    num_lon_bins = int(360 / granularity)
-    lat_bin = bin_index // num_lon_bins
-    lon_bin = bin_index % num_lon_bins
-
-    latitude = lat_bin * granularity - 90 + granularity / 2
-    longitude = lon_bin * granularity - 180 + granularity / 2
-
-    return (latitude, longitude)
 
 
 # Cleanup and preparation
@@ -41,7 +36,7 @@ os.makedirs(test_path, exist_ok=True)
 # Load coordinates and calculate bins
 coords_df = pd.read_csv(COORDS_PATH, header=0, names=["Latitude", "Longitude"])
 coords_df["Bin"] = coords_df.apply(
-    lambda row: calculate_bin(row["Latitude"], row["Longitude"], BIN_SIZE),
+    lambda row: _calculate_bin(row["Latitude"], row["Longitude"], BIN_SIZE),
     axis=1,
 )
 

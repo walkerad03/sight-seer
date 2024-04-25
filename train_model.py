@@ -14,9 +14,11 @@ if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Using device: {device}")
 
+    print(0 / 0)
+
     BATCH_SIZE = 16
 
-    data_path = Path("processed/")
+    data_path = Path("dataset/")
 
     train_dir = data_path / "train"
     test_dir = data_path / "test"
@@ -58,6 +60,6 @@ if __name__ == "__main__":
 
     utils.save_model(
         model=model_res,
-        target_dir="models",
-        model_name="sight-seer_res18_512pixelimage_80epochs_newdataset.pth",
+        target_dir="unfinished_models",
+        model_name="model.pth",
     )
