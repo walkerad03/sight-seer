@@ -14,9 +14,7 @@ if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Using device: {device}")
 
-    print(0 / 0)
-
-    BATCH_SIZE = 16
+    BATCH_SIZE = 8
 
     data_path = Path("dataset/")
 

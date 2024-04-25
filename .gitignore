@@ -1,7 +1,7 @@
 venv/
 unfinished_models/
-street_view_images/
-processed/
+raw_images/
+dataset/
 .env
 
 __pycache__/
