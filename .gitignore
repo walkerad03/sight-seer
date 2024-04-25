@@ -1,0 +1,10 @@
+venv/
+unfinished_models/
+street_view_images/
+processed/
+.env
+coords_heatmap.py
+
+__pycache__/
+*.py[cod]
+*$py.class
