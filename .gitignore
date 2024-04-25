@@ -1,8 +1,11 @@
 venv/
+.env
+
 unfinished_models/
 raw_images/
 dataset/
-.env
+
+temporary_files/
 
 __pycache__/
 *.py[cod]
