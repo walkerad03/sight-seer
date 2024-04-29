@@ -1,9 +1,11 @@
 venv/
-unfinished_models/
-street_view_images/
-processed/
 .env
-coords_heatmap.py
+
+unfinished_models/
+raw_images/
+dataset/
+
+temporary_files/
 
 __pycache__/
 *.py[cod]

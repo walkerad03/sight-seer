@@ -70,7 +70,9 @@ def get_street_view_image(lat, lon, heading):
 
 
 def crop_image(image_data):
-    """Crop the image to a centered 512x512 square."""
+    """
+    Crop the image to a centered 512x512 square.
+    """
     with Image.open(io.BytesIO(image_data)) as img:
         width, height = img.size  # Should be 640x640 as per IMAGE_SIZE
         left = (width - CROP_SIZE[0]) // 2
@@ -82,7 +84,9 @@ def crop_image(image_data):
 
 
 def save_image(image, index):
-    """Save the image data to a file in the specified output directory."""
+    """
+    Save the image data to a file in the specified output directory.
+    """
     if image:
         os.makedirs(OUTPUT_DIR, exist_ok=True)
         file_path = os.path.join(OUTPUT_DIR, f"{index}.png")
@@ -92,7 +96,6 @@ def save_image(image, index):
 
 
 def main():
-
     coordinate_dataframe = pd.DataFrame(columns=["Latitude", "Longitude"])
     i = START_AT_INDEX
 
