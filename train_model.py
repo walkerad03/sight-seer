@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import torch
 import torchvision
 from torch import nn, optim
@@ -14,14 +12,13 @@ if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Using device: {device}")
 
+    CSV_FILE = "dataset/annotations.csv"
+    ROOT_DIR = "dataset"
+
     BATCH_SIZE = 8
+    VALIDATION_SPLIT = 0.2
 
-    data_path = Path("dataset/")
-
-    train_dir = data_path / "train"
-    test_dir = data_path / "test"
-
-    data_transform = transforms.Compose(
+    DATA_TRANSFORM = transforms.Compose(
         [
             transforms.Resize((512, 512)),
             transforms.RandomHorizontalFlip(p=0.5),
@@ -29,9 +26,9 @@ if __name__ == "__main__":
         ]
     )
 
-    train_dataloader, test_dataloader, _, class_names = (
+    train_dataloader, val_dataloader, class_names = (
         data_setup.create_dataloaders(
-            train_dir, test_dir, data_transform, BATCH_SIZE
+            CSV_FILE, ROOT_DIR, DATA_TRANSFORM, BATCH_SIZE, VALIDATION_SPLIT
         )
     )
 
@@ -49,7 +46,7 @@ if __name__ == "__main__":
     results = engine.train(
         model=model_res,
         train_dataloader=train_dataloader,
-        test_dataloader=test_dataloader,
+        test_dataloader=val_dataloader,
         optimizer=optimizer,
         loss_fn=loss_fn,
         epochs=NUM_EPOCHS,
@@ -59,5 +56,5 @@ if __name__ == "__main__":
     utils.save_model(
         model=model_res,
         target_dir="unfinished_models",
-        model_name="model.pth",
+        model_name="sightseer_res18_10epochs_quadtree.pth",
     )

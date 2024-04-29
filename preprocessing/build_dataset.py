@@ -64,3 +64,8 @@ binned_data = binned_data.sort_values(by="SortKey")
 binned_data.drop("SortKey", axis=1, inplace=True)
 
 binned_data.to_csv(f"{FINAL_PATH}/annotations.csv", index=False)
+for filename in binned_data["filename"].values:
+    file_path = os.path.join(IMAGES_PATH, filename)
+    if filename.lower().endswith(".png"):
+        dest_path = os.path.join(FINAL_PATH, filename)
+        shutil.copy(file_path, dest_path)

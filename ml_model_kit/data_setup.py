@@ -1,62 +1,83 @@
 import os
+import io
+import pandas as pd
+import numpy as np
 
-from torch.utils.data import DataLoader
-from torchvision.datasets import ImageFolder
-from torchvision import datasets, transforms
+import torch
+from torch.utils.data import DataLoader, Dataset
+from torch.utils.data.sampler import SubsetRandomSampler
+from torchvision import transforms
 
 
 NUM_WORKERS = os.cpu_count()
 
 
-class CustomImageFolder(ImageFolder):
-    def __getitem__(self, index):
-        # This is the original line from ImageFolder
-        path, target = self.samples[index]
-        sample = self.loader(path)
-        if self.transform is not None:
-            sample = self.transform(sample)
-        if self.target_transform is not None:
-            target = self.target_transform(target)
+class ImageDataset(Dataset):
+    def __init__(self, csv_file, root_dir, transform=None):
+        self.annotations = pd.read_csv(csv_file)
+        self.root_dir = root_dir
+        self.transform = transform
 
-        # Return the path along with the image tensor and label
-        return sample, target, path
+        self.classes = self.annotations["bin"].unique().tolist()
+
+    def __len__(self):
+        return len(self.annotations)
+
+    def __getitem__(self, idx):
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+
+        img_name = os.path.join(self.root_dir, self.annotations.iloc[idx, 0])
+        image = io.imread(img_name)
+        annotations = self.annotations.iloc[idx, 1:]
+        annotations = np.array([annotations]).reshape(-1, 2)
+        sample = {"image": image, "annotations": annotations}
+
+        if self.transform:
+            sample = self.transform(sample)
+
+        return sample
 
 
 def create_dataloaders(
-    train_dir: str,
-    test_dir: str,
+    csv_file: str,
+    root_dir: str,
     transform: transforms.Compose,
     batch_size: int,
+    validation_split: float,
     num_workers: int = NUM_WORKERS,
 ):
-    train_data = datasets.ImageFolder(train_dir, transform=transform)
-    test_data = datasets.ImageFolder(test_dir, transform=transform)
-    eval_data = CustomImageFolder(test_dir, transform=transform)
+    dataset = ImageDataset(
+        csv_file=csv_file,
+        root_dir=root_dir,
+        transform=transform,
+    )
 
-    class_names = train_data.classes
+    class_names = dataset.classes
+
+    dataset_size = len(dataset)
+    split = int(np.floor(validation_split * dataset_size))
+    indices = list(range(dataset_size))
+
+    train_indices, val_indices = indices[split:], indices[:split]
+
+    train_sampler = SubsetRandomSampler(train_indices)
+    val_sampler = SubsetRandomSampler(val_indices)
 
     train_dataloader = DataLoader(
-        dataset=train_data,
+        dataset=dataset,
         batch_size=batch_size,
-        shuffle=True,
         num_workers=num_workers,
         pin_memory=True,
+        sampler=train_sampler,
     )
 
-    test_dataloader = DataLoader(
-        dataset=test_data,
+    validation_dataloader = DataLoader(
+        dataset=dataset,
         batch_size=batch_size,
-        shuffle=False,
         num_workers=num_workers,
         pin_memory=True,
+        sampler=val_sampler,
     )
 
-    eval_dataloader = DataLoader(
-        dataset=eval_data,
-        batch_size=batch_size,
-        shuffle=False,
-        num_workers=num_workers,
-        pin_memory=True,
-    )
-
-    return train_dataloader, test_dataloader, eval_dataloader, class_names
+    return train_dataloader, validation_dataloader, class_names
