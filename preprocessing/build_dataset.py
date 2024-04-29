@@ -1,71 +1,66 @@
 import pandas as pd
 import os
 import shutil
-from tqdm import tqdm
 
-COORDS_PATH = "raw_images/coords.csv"
+
+def bin_data(df: pd.DataFrame, max_bin_size: int):
+    if len(df) < max_bin_size:
+        return df
+
+    if "bin" not in df:
+        df["bin"] = ""
+
+    center_lat = (df["Latitude"].min() + df["Latitude"].max()) / 2
+    center_lon = (df["Longitude"].min() + df["Longitude"].max()) / 2
+
+    df.loc[
+        (df["Latitude"] > center_lat) & (df["Longitude"] > center_lon), "bin"
+    ] += "1"
+    df.loc[
+        (df["Latitude"] <= center_lat) & (df["Longitude"] > center_lon), "bin"
+    ] += "2"
+    df.loc[
+        (df["Latitude"] > center_lat) & (df["Longitude"] <= center_lon), "bin"
+    ] += "3"
+    df.loc[
+        (df["Latitude"] <= center_lat) & (df["Longitude"] <= center_lon), "bin"
+    ] += "4"
+
+    bin1 = bin_data(df[df["bin"].str.endswith("1")], max_bin_size=max_bin_size)
+    bin2 = bin_data(df[df["bin"].str.endswith("2")], max_bin_size=max_bin_size)
+    bin3 = bin_data(df[df["bin"].str.endswith("3")], max_bin_size=max_bin_size)
+    bin4 = bin_data(df[df["bin"].str.endswith("4")], max_bin_size=max_bin_size)
+
+    return pd.concat([bin1, bin2, bin3, bin4])
+
+
+CSV_PATH = "raw_images/coords.csv"
 IMAGES_PATH = "raw_images/"
 FINAL_PATH = "dataset/"
-BIN_SIZE = 5  # Degrees
-TRAIN_TEST_RATIO = 0.85
+MAX_BIN_SIZE = 50
+MIN_BIN_SIZE = 10
 
-
-def _calculate_bin(latitude, longitude, granularity):
-    """
-    Compute a class for a given latitude and longitude.
-
-    Bins are grid squares spread across any point on the globe. `granularity`
-    defines the width of the squares in degrees.
-    """
-    lat_bin = int((latitude + 90) / granularity)
-    lon_bin = int((longitude + 180) / granularity)
-    num_lon_bins = int(360 / granularity)
-    return lat_bin * num_lon_bins + lon_bin
-
-
-# Cleanup and preparation
 if os.path.exists(FINAL_PATH):
     shutil.rmtree(FINAL_PATH)
 os.makedirs(FINAL_PATH)
 
-train_path = os.path.join(FINAL_PATH, "train")
-test_path = os.path.join(FINAL_PATH, "test")
-os.makedirs(train_path, exist_ok=True)
-os.makedirs(test_path, exist_ok=True)
 
-# Load coordinates and calculate bins
-coords_df = pd.read_csv(COORDS_PATH, header=0, names=["Latitude", "Longitude"])
-coords_df["Bin"] = coords_df.apply(
-    lambda row: _calculate_bin(row["Latitude"], row["Longitude"], BIN_SIZE),
-    axis=1,
+data = pd.read_csv(
+    CSV_PATH,
+    header=0,
+    names=["filename", "Latitude", "Longitude"],
 )
 
-# Track bins that have images in both train and test
-train_bins = set()
-test_bins = set()
+binned_data = bin_data(data, max_bin_size=MAX_BIN_SIZE)
 
-train_cutoff = int(len(coords_df) * TRAIN_TEST_RATIO)
+bin_counts = binned_data["bin"].value_counts()
+bins_to_keep = bin_counts[bin_counts >= MIN_BIN_SIZE].index
+binned_data = binned_data[binned_data["bin"].isin(bins_to_keep)]
 
-# Image distribution
-for index, row in tqdm(coords_df.iterrows(), total=coords_df.shape[0]):
-    placement_folder = train_path if index <= train_cutoff else test_path
-    placement_set = train_bins if index <= train_cutoff else test_bins
-    image_name = f"{index}.png"
-    bin_folder = str(int(row["Bin"]))
-    bin_folder_path = os.path.join(placement_folder, bin_folder)
+binned_data["SortKey"] = (
+    binned_data["filename"].str.extract(r"(\d+)").astype(int)
+)
+binned_data = binned_data.sort_values(by="SortKey")
+binned_data.drop("SortKey", axis=1, inplace=True)
 
-    os.makedirs(bin_folder_path, exist_ok=True)
-    shutil.copy(
-        os.path.join(IMAGES_PATH, image_name),
-        os.path.join(bin_folder_path, image_name),
-    )
-    placement_set.add(bin_folder)
-
-# Remove bins not in both train and test
-for bin_folder in train_bins | test_bins:
-    if bin_folder not in train_bins or bin_folder not in test_bins:
-        shutil.rmtree(os.path.join(train_path, bin_folder), ignore_errors=True)
-        shutil.rmtree(os.path.join(test_path, bin_folder), ignore_errors=True)
-
-# Save the modified coordinates DataFrame
-coords_df.to_csv(os.path.join(FINAL_PATH, "coords_modified.csv"))
+binned_data.to_csv(f"{FINAL_PATH}/annotations.csv", index=False)
