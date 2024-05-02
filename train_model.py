@@ -5,6 +5,7 @@ from torchvision import transforms
 
 from ml_model_kit import engine, data_setup, model_builder, utils
 
+
 if __name__ == "__main__":
     print(f"PyTorch version: {torch.__version__}")
     print(f"torchvision version: {torchvision.__version__}")
@@ -15,11 +16,12 @@ if __name__ == "__main__":
     CSV_FILE = "dataset/annotations.csv"
     ROOT_DIR = "dataset"
 
-    BATCH_SIZE = 8
+    BATCH_SIZE = 4
     VALIDATION_SPLIT = 0.2
 
     DATA_TRANSFORM = transforms.Compose(
         [
+            transforms.ToPILImage(),
             transforms.Resize((512, 512)),
             transforms.RandomHorizontalFlip(p=0.5),
             transforms.ToTensor(),

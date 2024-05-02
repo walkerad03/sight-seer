@@ -38,7 +38,7 @@ CSV_PATH = "raw_images/coords.csv"
 IMAGES_PATH = "raw_images/"
 FINAL_PATH = "dataset/"
 MAX_BIN_SIZE = 50
-MIN_BIN_SIZE = 10
+MIN_BIN_SIZE = 48
 
 if os.path.exists(FINAL_PATH):
     shutil.rmtree(FINAL_PATH)
