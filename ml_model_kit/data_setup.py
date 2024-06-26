@@ -101,7 +101,7 @@ def create_dataloaders(
     )
 
     transform = transforms.Compose(
-        transform, [transforms.Normalize(mean=mean, std=std)]
+        [transform, transforms.Normalize(mean=mean, std=std)]
     )
 
     dataset = ImageDataset(
