@@ -23,11 +23,10 @@ def train_step(
     device: torch.device,
 ) -> Tuple[float, float]:
     model.train()
-
     train_loss, train_acc = 0, 0
 
-    for batch, (X, y, _) in enumerate(dataloader):
-        X, y = X.to(device), y.to(device)
+    for batch in dataloader:
+        X, y = batch["image"].to(device), batch["bin"].to(device)
 
         y_pred = model(X)
 
@@ -46,7 +45,7 @@ def train_step(
     return train_loss, train_acc
 
 
-def test_step(
+def val_step(
     model: nn.Module,
     dataloader: DataLoader,
     loss_fn: nn.Module,
@@ -54,31 +53,31 @@ def test_step(
 ) -> Tuple[float, float]:
     model.eval()
 
-    test_loss, test_acc = 0, 0
+    val_loss, val_acc = 0, 0
 
     with torch.inference_mode():
-        for batch, (X, y, _) in enumerate(dataloader):
-            X, y = X.to(device), y.to(device)
+        for batch in dataloader:
+            X, y = batch["image"].to(device), batch["bin"].to(device)
 
-            test_pred_logits = model(X)
+            val_pred_logits = model(X)
 
-            loss = loss_fn(test_pred_logits, y)
-            test_loss += loss.item()
+            loss = loss_fn(val_pred_logits, y)
+            val_loss += loss.item()
 
-            test_pred_labels = test_pred_logits.argmax(dim=1)
-            test_acc += ((test_pred_labels == y)).sum().item() / len(
-                test_pred_labels
+            val_pred_labels = val_pred_logits.argmax(dim=1)
+            val_acc += ((val_pred_labels == y)).sum().item() / len(
+                val_pred_labels
             )
 
-    test_loss /= len(dataloader)
-    test_acc /= len(dataloader)
-    return test_loss, test_acc
+    val_loss /= len(dataloader)
+    val_acc /= len(dataloader)
+    return val_loss, val_acc
 
 
 def train(
     model: nn.Module,
     train_dataloader: DataLoader,
-    test_dataloader: DataLoader,
+    val_dataloader: DataLoader,
     optimizer: optim.Optimizer,
     loss_fn: nn.Module,
     epochs: int,
@@ -87,8 +86,8 @@ def train(
     results = {
         "train_loss": [],
         "train_acc": [],
-        "test_loss": [],
-        "test_acc": [],
+        "val_loss": [],
+        "val_acc": [],
     }
 
     time_start = datetime.datetime.now()
@@ -102,9 +101,9 @@ def train(
             device=device,
         )
 
-        test_loss, test_acc = test_step(
+        val_loss, val_acc = val_step(
             model=model,
-            dataloader=test_dataloader,
+            dataloader=val_dataloader,
             loss_fn=loss_fn,
             device=device,
         )
@@ -123,14 +122,14 @@ def train(
             f"Epoch: {epoch+1:0{len(str(epochs))}}/{epochs} | "
             f"train_loss: {train_loss:.4f} | "
             f"train_acc: {train_acc*100:.2f}% | "
-            f"test_loss: {test_loss:.4f} | "
-            f"test_acc: {test_acc*100:.2f}% | "
+            f"val_loss: {val_loss:.4f} | "
+            f"val_acc: {val_acc*100:.2f}% | "
             f"[{time_elapsed_string}<{time_remaining_string}]"
         )
 
         results["train_loss"].append(train_loss)
         results["train_acc"].append(train_acc)
-        results["test_loss"].append(test_loss)
-        results["test_acc"].append(test_acc)
+        results["val_loss"].append(val_loss)
+        results["val_acc"].append(val_acc)
 
     return results

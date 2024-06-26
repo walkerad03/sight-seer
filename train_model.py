@@ -17,38 +17,48 @@ if __name__ == "__main__":
     ROOT_DIR = "dataset"
 
     BATCH_SIZE = 4
-    VALIDATION_SPLIT = 0.2
+    TRAIN_SPLIT = 0.7
+    VALIDATION_SPLIT = 0.15
 
     DATA_TRANSFORM = transforms.Compose(
         [
-            transforms.ToPILImage(),
             transforms.Resize((512, 512)),
             transforms.RandomHorizontalFlip(p=0.5),
-            transforms.ToTensor(),
         ]
     )
 
-    train_dataloader, val_dataloader, class_names = (
+    print("Setting up dataloaders")
+
+    train_dataloader, val_dataloader, test_dataloader, class_names = (
         data_setup.create_dataloaders(
-            CSV_FILE, ROOT_DIR, DATA_TRANSFORM, BATCH_SIZE, VALIDATION_SPLIT
+            CSV_FILE,
+            ROOT_DIR,
+            DATA_TRANSFORM,
+            BATCH_SIZE,
+            TRAIN_SPLIT,
+            VALIDATION_SPLIT,
         )
     )
+
+    print("Creating model")
 
     model_res = model_builder.ResNet18(
         3, resblock=model_builder.ResBlock, outputs=len(class_names)
     ).to(device)
 
-    NUM_EPOCHS = 10
+    NUM_EPOCHS = 30
 
     print(f"Using model: {model_res.name}")
 
     loss_fn = nn.CrossEntropyLoss()
     optimizer = optim.Adam(params=model_res.parameters(), lr=0.0001)
 
+    print("Starting training...")
+
     results = engine.train(
         model=model_res,
         train_dataloader=train_dataloader,
-        test_dataloader=val_dataloader,
+        val_dataloader=val_dataloader,
         optimizer=optimizer,
         loss_fn=loss_fn,
         epochs=NUM_EPOCHS,
@@ -58,5 +68,5 @@ if __name__ == "__main__":
     utils.save_model(
         model=model_res,
         target_dir="unfinished_models",
-        model_name="sightseer_res18_10epochs_quadtree.pth",
+        model_name="sightseer_res18_30epochs_quadtree_singlefolder.pth",
     )

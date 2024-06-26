@@ -38,7 +38,7 @@ CSV_PATH = "raw_images/coords.csv"
 IMAGES_PATH = "raw_images/"
 FINAL_PATH = "dataset/"
 MAX_BIN_SIZE = 50
-MIN_BIN_SIZE = 48
+MIN_BIN_SIZE = 35
 
 if os.path.exists(FINAL_PATH):
     shutil.rmtree(FINAL_PATH)
@@ -64,8 +64,16 @@ binned_data = binned_data.sort_values(by="SortKey")
 binned_data.drop("SortKey", axis=1, inplace=True)
 
 binned_data.to_csv(f"{FINAL_PATH}/annotations.csv", index=False)
-for filename in binned_data["filename"].values:
+for filename, bin_value in zip(binned_data["filename"], binned_data["bin"]):
     file_path = os.path.join(IMAGES_PATH, filename)
     if filename.lower().endswith(".png"):
         dest_path = os.path.join(FINAL_PATH, filename)
+        os.makedirs(os.path.join(FINAL_PATH), exist_ok=True)
         shutil.copy(file_path, dest_path)
+
+
+print(f'Categories: {len(pd.unique(binned_data["bin"]))}')
+print(f'Max Depth: {len(max(pd.unique(binned_data["bin"]), key=len))}')
+print(f'Min Depth: {len(min(pd.unique(binned_data["bin"]), key=len))}')
+print(f'Max items in bin: {binned_data["bin"].value_counts().max()}')
+print(f'Min items in bin: {binned_data["bin"].value_counts().min()}')
