@@ -131,8 +131,14 @@ def train(
         results["train_loss"].append(train_loss)
         results["val_loss"].append(val_loss)
 
-        writer.add_scalar("Loss/train", train_loss, epoch)
-        writer.add_scalar("Loss/val", val_loss, epoch)
+        writer.add_scalars(
+            "loss",
+            {
+                "train": train_loss,
+                "val": val_loss,
+            },
+            epoch + 1,
+        )
 
     writer.close()
     return results

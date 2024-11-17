@@ -25,8 +25,8 @@ if __name__ == "__main__":
     CSV_FILE = "dataset/annotations.csv"
     ROOT_DIR = "dataset"
 
-    BATCH_SIZE = 8
-    LEARNING_RATE = 0.0001
+    BATCH_SIZE = 32
+    LEARNING_RATE = 0.001
     TRAIN_SPLIT = 0.8
     VALIDATION_SPLIT = 0.2
 
@@ -57,7 +57,7 @@ if __name__ == "__main__":
         3, resblock=model_builder.ResBlock, outputs=len(class_names)
     ).to(device)
 
-    NUM_EPOCHS = 5
+    NUM_EPOCHS = 30
 
     print(f"Using model: {model.name}")
 
@@ -78,6 +78,6 @@ if __name__ == "__main__":
 
     utils.save_model(
         model=model,
-        target_dir="unfinished_models",
-        model_name="sightseer_512.pth",
+        target_dir="checkpoints",
+        model_name="sightseer_512_30.pth",
     )

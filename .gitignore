@@ -5,6 +5,7 @@ unfinished_models/
 raw_images/
 dataset/
 runs/
+checkpoints/
 
 temporary_files/
 

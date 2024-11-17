@@ -8,6 +8,9 @@ from torch.utils.data.sampler import SubsetRandomSampler
 from torchvision import transforms
 from torchvision.io import read_image
 
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.model_selection import train_test_split
+
 
 NUM_WORKERS = os.cpu_count()
 
