@@ -79,5 +79,5 @@ if __name__ == "__main__":
     utils.save_model(
         model=model,
         target_dir="checkpoints",
-        model_name="sightseer_512_30.pth",
+        model_name="sightseer_512_30_scaled_data.pth",
     )

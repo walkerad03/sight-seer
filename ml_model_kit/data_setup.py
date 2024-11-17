@@ -8,9 +8,6 @@ from torch.utils.data.sampler import SubsetRandomSampler
 from torchvision import transforms
 from torchvision.io import read_image
 
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.model_selection import train_test_split
-
 
 NUM_WORKERS = os.cpu_count()
 
@@ -82,8 +79,25 @@ def create_dataloaders(
         ]
     )
 
+    data = pd.read_csv(csv_file)
+
+    print(f'Lat Mean: {data["Latitude"].mean()}')
+    print(f'Lat Std: {data["Latitude"].std()}')
+    print(f'Lon Mean: {data["Longitude"].mean()}')
+    print(f'Lon Std: {data["Longitude"].std()}')
+
+    data["Latitude"] = (data["Latitude"] - data["Latitude"].mean()) / data[
+        "Latitude"
+    ].std()
+
+    data["Longitude"] = (data["Longitude"] - data["Longitude"].mean()) / data[
+        "Longitude"
+    ].std()
+
+    data.to_csv("scaled_data.csv", index=False)
+
     dataset = ImageDataset(
-        csv_file=csv_file,
+        csv_file="scaled_data.csv",
         root_dir=root_dir,
         transform=transform,
     )

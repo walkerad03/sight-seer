@@ -19,6 +19,9 @@ def process_image(image):
 
     lat, lon = coords[0, 0], coords[0, 1]
 
+    lat = lat * 5.2881766013678755 + 38.337428876696954
+    lon = lon * 13.681640981664552 - 91.16433196360929
+
     fig = go.Figure(
         go.Scattermapbox(
             lat=[lat],
