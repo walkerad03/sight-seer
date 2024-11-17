@@ -4,6 +4,7 @@ venv/
 unfinished_models/
 raw_images/
 dataset/
+runs/
 
 temporary_files/
 

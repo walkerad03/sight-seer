@@ -1,5 +1,17 @@
 import torch
 from torch import nn
+from torchvision import models
+
+
+class PrebuildRes(nn.Module):
+    def __init__(self):
+        self.name = "Prebuild Res"
+        super(PrebuildRes, self).__init__()
+        self.backbone = models.resnet18(pretrained=True)
+        self.backbone.fc = nn.Linear(self.backbone.fc.in_features, 2)
+
+    def forward(self, x):
+        return self.backbone(x)
 
 
 class ResBlock(nn.Module):
@@ -65,7 +77,14 @@ class ResNet18(nn.Module):
         )
 
         self.gap = torch.nn.AdaptiveAvgPool2d(1)
-        self.fc = torch.nn.Linear(512, outputs)
+
+        self.fc_layer = nn.Sequential(
+            nn.Linear(512, outputs),
+            nn.ReLU(),
+            nn.Linear(outputs, 256),
+            nn.ReLU(),
+            nn.Linear(256, 2),
+        )
 
     def forward(self, input):
         input = self.layer0(input)
@@ -75,6 +94,6 @@ class ResNet18(nn.Module):
         input = self.layer4(input)
         input = self.gap(input)
         input = torch.flatten(input, start_dim=1)
-        input = self.fc(input)
+        input = self.fc_layer(input)
 
         return input

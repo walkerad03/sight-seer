@@ -1,4 +1,8 @@
 # Sight Seer
+
+> [!warning]
+> This Readme is extremely outdated!
+
 This project uses a residual network[^1] to find a location from a single photograph. Model architecture is a ResNet18 model. Across the United States, the model achieved an accuracy of 16.26% across 55 classes.
 
 ## Dataset Details

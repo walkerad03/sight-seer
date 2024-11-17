@@ -7,7 +7,6 @@ from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.sampler import SubsetRandomSampler
 from torchvision import transforms
 from torchvision.io import read_image
-import torchvision.transforms.functional as F
 
 
 NUM_WORKERS = os.cpu_count()
@@ -33,50 +32,32 @@ class ImageDataset(Dataset):
             idx = idx.tolist()
 
         img_name = os.path.join(self.root_dir, self.annotations.iloc[idx, 0])
-        image = read_image(img_name)
 
-        image = F.convert_image_dtype(image, torch.float32)
+        try:
+            image = read_image(img_name)
+        except Exception as e:
+            print(f"Error loading image {img_name}:\n{e}\n")
+            return None
 
-        latitude = self.annotations.iloc[idx, 1]
-        longitude = self.annotations.iloc[idx, 2]
-        bin_label = self.annotations.iloc[idx, 3]
-        class_number = self.bin_to_class[bin_label]
+        try:
+            targets = torch.tensor(
+                [
+                    float(self.annotations.iloc[idx, 1]),
+                    float(self.annotations.iloc[idx, 2]),
+                ],
+                dtype=torch.float32,
+            )
+        except Exception as e:
+            print(f"Error processing targets for idx {idx}:\n{e}\n")
+            return {
+                "error": f"Target processing failed for idx {idx}",
+                "idx": idx,
+            }
 
         if self.transform:
-            image = self.transform(image)
+            image = self.transform(image.float())
 
-        return {
-            "image": image,
-            "latitude": torch.tensor(latitude, dtype=torch.float),
-            "longitude": torch.tensor(longitude, dtype=torch.float),
-            "bin": torch.tensor(class_number, dtype=torch.long),
-        }
-
-
-def get_dataset_statistics(dataset, batch_size=32, num_workers=NUM_WORKERS):
-    dataloader = DataLoader(
-        dataset,
-        batch_size=batch_size,
-        num_workers=num_workers,
-        shuffle=False,
-    )
-
-    mean = torch.zeros(3)
-    std = torch.zeros(3)
-    total_images = 0
-
-    for batch in dataloader:
-        images = batch["image"]
-        batch_samples = images.size(0)
-        images = images.view(batch_samples, images.size(1), -1)
-        mean += images.mean(2).sum(0)
-        std += images.std(2).sum(0)
-        total_images += batch_samples
-
-    mean /= total_images
-    std /= total_images
-
-    return mean, std
+        return {"image": image, "targets": targets}
 
 
 def create_dataloaders(
@@ -88,20 +69,14 @@ def create_dataloaders(
     validation_split: float,
     num_workers: int = NUM_WORKERS,
 ):
-    dataset_for_stats = ImageDataset(
-        csv_file=csv_file,
-        root_dir=root_dir,
-        transform=None,
-    )
-
-    mean, std = get_dataset_statistics(
-        dataset_for_stats,
-        batch_size,
-        num_workers,
-    )
+    mean = torch.Tensor([137.1102, 144.0311, 137.1939])
+    std = torch.Tensor([46.3285, 45.0499, 60.7456])
 
     transform = transforms.Compose(
-        [transform, transforms.Normalize(mean=mean, std=std)]
+        [
+            transform,
+            transforms.Normalize(mean=mean, std=std),
+        ]
     )
 
     dataset = ImageDataset(
@@ -131,7 +106,6 @@ def create_dataloaders(
         dataset=dataset,
         batch_size=batch_size,
         num_workers=num_workers,
-        pin_memory=True,
         sampler=train_sampler,
     )
 
@@ -139,7 +113,6 @@ def create_dataloaders(
         dataset=dataset,
         batch_size=batch_size,
         num_workers=num_workers,
-        pin_memory=True,
         sampler=val_sampler,
     )
 
@@ -147,7 +120,6 @@ def create_dataloaders(
         dataset=dataset,
         batch_size=batch_size,
         num_workers=num_workers,
-        pin_memory=True,
         sampler=test_sampler,
     )
 

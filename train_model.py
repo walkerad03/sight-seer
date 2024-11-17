@@ -1,12 +1,21 @@
+import os
+
 import torch
 import torchvision
 from torch import nn, optim
 from torchvision import transforms
 
+
 from ml_model_kit import engine, data_setup, model_builder, utils
 
 
+def configure_environment():
+    os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
+
+
 if __name__ == "__main__":
+    configure_environment()
+
     print(f"PyTorch version: {torch.__version__}")
     print(f"torchvision version: {torchvision.__version__}")
 
@@ -16,9 +25,10 @@ if __name__ == "__main__":
     CSV_FILE = "dataset/annotations.csv"
     ROOT_DIR = "dataset"
 
-    BATCH_SIZE = 4
-    TRAIN_SPLIT = 0.7
-    VALIDATION_SPLIT = 0.15
+    BATCH_SIZE = 8
+    LEARNING_RATE = 0.0001
+    TRAIN_SPLIT = 0.8
+    VALIDATION_SPLIT = 0.2
 
     DATA_TRANSFORM = transforms.Compose(
         [
@@ -37,26 +47,27 @@ if __name__ == "__main__":
             BATCH_SIZE,
             TRAIN_SPLIT,
             VALIDATION_SPLIT,
+            num_workers=4,
         )
     )
 
     print("Creating model")
 
-    model_res = model_builder.ResNet18(
+    model = model_builder.ResNet18(
         3, resblock=model_builder.ResBlock, outputs=len(class_names)
     ).to(device)
 
-    NUM_EPOCHS = 30
+    NUM_EPOCHS = 5
 
-    print(f"Using model: {model_res.name}")
+    print(f"Using model: {model.name}")
 
-    loss_fn = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(params=model_res.parameters(), lr=0.0001)
+    loss_fn = nn.L1Loss()
+    optimizer = optim.Adam(params=model.parameters(), lr=LEARNING_RATE)
 
     print("Starting training...")
 
     results = engine.train(
-        model=model_res,
+        model=model,
         train_dataloader=train_dataloader,
         val_dataloader=val_dataloader,
         optimizer=optimizer,
@@ -66,7 +77,7 @@ if __name__ == "__main__":
     )
 
     utils.save_model(
-        model=model_res,
+        model=model,
         target_dir="unfinished_models",
-        model_name="sightseer_res18_30epochs_quadtree_singlefolder.pth",
+        model_name="sightseer_512.pth",
     )
