@@ -3,6 +3,7 @@ import torch
 from torch import nn, optim
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
+from ml_model_kit import utils
 
 import datetime
 
@@ -139,6 +140,13 @@ def train(
             },
             epoch + 1,
         )
+
+        if epoch % 10 == 0:
+            utils.save_model(
+                model=model,
+                target_dir="checkpoints",
+                model_name=f"sightseer_deargodhelpme_step{epoch}.pth",
+            )
 
     writer.close()
     return results

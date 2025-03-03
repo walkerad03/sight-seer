@@ -4,11 +4,30 @@ import torch
 from torchvision import transforms
 from ml_model_kit import model_builder
 
+import matplotlib.pyplot as plt
+
 
 def process_image(image):
     image = image.convert("RGB")
 
     image_tensor = transform(image).unsqueeze(0)
+
+    data = image_tensor.numpy()
+
+    fig, axes = plt.subplots(1, 3, figsize=(12, 4), sharey=True)
+
+    labels = ["Red", "Green", "Blue"]
+
+    print(data[0][0].flatten().shape)
+
+    for i in range(3):
+        axes[i].hist(data[0][i].flatten(), bins=50)
+        axes[i].set_title(labels[i])
+
+    fig.suptitle("Color Distribution of Input Image")
+    plt.legend()
+    plt.savefig("color_distribution.png")
+
     image_tensor = image_tensor.to(device)
 
     model.eval()
@@ -17,10 +36,12 @@ def process_image(image):
 
     coords = output.cpu().numpy()
 
+    print(coords)
+
     lat, lon = coords[0, 0], coords[0, 1]
 
-    lat = lat * 5.2881766013678755 + 38.337428876696954
-    lon = lon * 13.681640981664552 - 91.16433196360929
+    lat = 24.396308 + lat * (49.384358 - 24.396308)
+    lon = -124.848974 + lon * (-66.93457 - -124.848974)
 
     fig = go.Figure(
         go.Scattermapbox(
@@ -45,11 +66,11 @@ def process_image(image):
 
 
 if __name__ == "__main__":
-    MODEL_PATH = "checkpoints/sightseer_512_30.pth"
+    MODEL_PATH = "checkpoints/sightseer_deargodhelpme.pth"
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     model = model_builder.ResNet18(
-        3, resblock=model_builder.ResBlock, outputs=951
+        3, resblock=model_builder.ResBlock, outputs=234
     )
 
     transform = transforms.Compose(
@@ -80,4 +101,4 @@ if __name__ == "__main__":
             process_image, inputs=image_input, outputs=map_output
         )
 
-    interface.launch(share=True)
+    interface.launch(share=False)

@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 import shutil
+from tqdm import tqdm
 
 
 def bin_data(df: pd.DataFrame, max_bin_size: int):
@@ -37,8 +38,8 @@ def bin_data(df: pd.DataFrame, max_bin_size: int):
 CSV_PATH = "raw_images/coords.csv"
 IMAGES_PATH = "raw_images/"
 FINAL_PATH = "dataset/"
-MAX_BIN_SIZE = 50
-MIN_BIN_SIZE = 1
+MAX_BIN_SIZE = 80
+MIN_BIN_SIZE = 40
 
 if os.path.exists(FINAL_PATH):
     shutil.rmtree(FINAL_PATH)
@@ -53,6 +54,8 @@ data = pd.read_csv(
 
 binned_data = bin_data(data, max_bin_size=MAX_BIN_SIZE)
 
+print("Completed Binning")
+
 bin_counts = binned_data["bin"].value_counts()
 bins_to_keep = bin_counts[bin_counts >= MIN_BIN_SIZE].index
 binned_data = binned_data[binned_data["bin"].isin(bins_to_keep)]
@@ -64,7 +67,9 @@ binned_data = binned_data.sort_values(by="SortKey")
 binned_data.drop("SortKey", axis=1, inplace=True)
 
 binned_data.to_csv(f"{FINAL_PATH}/annotations.csv", index=False)
-for filename, bin_value in zip(binned_data["filename"], binned_data["bin"]):
+for filename, bin_value in tqdm(
+    zip(binned_data["filename"], binned_data["bin"])
+):
     file_path = os.path.join(IMAGES_PATH, filename)
     if filename.lower().endswith(".png"):
         dest_path = os.path.join(FINAL_PATH, filename)

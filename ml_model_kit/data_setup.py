@@ -81,18 +81,18 @@ def create_dataloaders(
 
     data = pd.read_csv(csv_file)
 
-    print(f'Lat Mean: {data["Latitude"].mean()}')
-    print(f'Lat Std: {data["Latitude"].std()}')
-    print(f'Lon Mean: {data["Longitude"].mean()}')
-    print(f'Lon Std: {data["Longitude"].std()}')
+    print(f'Lat Min: {data["Latitude"].min()}')
+    print(f'Lat Max: {data["Latitude"].max()}')
+    print(f'Lon Min: {data["Longitude"].min()}')
+    print(f'Lon Max: {data["Longitude"].max()}')
 
-    data["Latitude"] = (data["Latitude"] - data["Latitude"].mean()) / data[
-        "Latitude"
-    ].std()
+    data["Latitude"] = (data["Latitude"] - data["Latitude"].min()) - (
+        data["Latitude"].max() - data["Latitude"].min()
+    )
 
-    data["Longitude"] = (data["Longitude"] - data["Longitude"].mean()) / data[
-        "Longitude"
-    ].std()
+    data["Longitude"] = (data["Longitude"] - data["Longitude"].min()) - (
+        data["Longitude"].max() - data["Longitude"].min()
+    )
 
     data.to_csv("scaled_data.csv", index=False)
 

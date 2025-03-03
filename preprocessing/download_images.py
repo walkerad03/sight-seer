@@ -22,9 +22,9 @@ LONGITUDE_BOUNDS = (
 )  # Approximate longitude bounds for the contiguous US
 NUM_IMAGES = 20000  # Number of images to generate
 OUTPUT_DIR = "street_view_images"  # Directory to save images
-CSV_FILENAME = "coords.csv"
+CSV_FILENAME = "coords2.csv"
 
-START_AT_INDEX = 0
+START_AT_INDEX = 21910
 
 
 def get_random_us_coordinate():
@@ -44,6 +44,7 @@ def check_street_view_availability(lat, lon) -> tuple:
     response = requests.get(base_url, params=params)
     if response.status_code == 200:
         data = response.json()
+        print(data)
         if data["status"] == "OK":
             return True, data["location"]["lat"], data["location"]["lng"]
     return False, None, None
@@ -96,7 +97,9 @@ def save_image(image, index):
 
 
 def main():
-    coordinate_dataframe = pd.DataFrame(columns=["Latitude", "Longitude"])
+    coordinate_dataframe = pd.DataFrame(
+        columns=["filename", "Latitude", "Longitude"]
+    )
     i = START_AT_INDEX
 
     while i < NUM_IMAGES + START_AT_INDEX:
@@ -117,6 +120,7 @@ def main():
             print(f"Saved Street View Image at: {file_path}")
 
         coordinate_dataframe.loc[len(coordinate_dataframe.index)] = [
+            f"{i}.png",
             true_lat,
             true_lon,
         ]
